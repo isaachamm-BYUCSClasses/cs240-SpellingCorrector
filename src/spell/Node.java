@@ -20,12 +20,4 @@ public class Node implements INode{
         return children;
     }
 
-    /** Need a way to add more children nodes to the array
-     *      when new words are added
-     */
-    public void addChildren() {
-
-    }
-
-
 }

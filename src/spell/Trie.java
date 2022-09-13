@@ -1,18 +1,25 @@
 package spell;
 
-import java.util.Objects;
-
 public class Trie implements ITrie{
-    Node root = new Node();
-    int wordCount = 0;
-    int nodeCount = 0;
+    private Node root = new Node();
+    private int wordCount = 0;
+    private int nodeCount = 1; //start with one for root
+
+    public void resetRoot() {
+        root = null;
+        root = new Node();
+    }
+    public Node getRoot() {
+        return root;
+    }
     @Override
     public void add(String word) {
 
         Node[] childrenArray = root.getChildren();
         int charIndex;
+        Node findCheck = find(word);
 
-        if(find(word) == null) {
+        if (findCheck == null) {
             wordCount++;
             for (int i = 0; i < word.length(); i++) {
                 charIndex = word.charAt(i) - 'a';
@@ -27,8 +34,10 @@ public class Trie implements ITrie{
                 childrenArray = childrenArray[charIndex].getChildren();
             }
         }
+        else {
+            findCheck.incrementValue();
+        }
     }
-
     @Override
     public Node find(String word) {
         Node[] childrenArray = root.getChildren();
@@ -41,64 +50,92 @@ public class Trie implements ITrie{
                 return null;
             }
             if(i == (word.length() - 1) &&
-                    childrenArray[charIndex] != null) {
+                    childrenArray[charIndex] != null &&
+                    childrenArray[charIndex].count > 0) {
                 foundNode = childrenArray[charIndex];
-                foundNode.incrementValue();
+                return foundNode;
             }
             childrenArray = childrenArray[charIndex].getChildren(); // reassigned to check for the next char
         }
-        return foundNode;
+        return null;
 
     }
-
     @Override
     public int getWordCount() {
         return wordCount;
     }
-
     @Override
     public int getNodeCount() {
         return nodeCount;
     }
-
     @Override
     public boolean equals(Object o) {
-        /* this is the function that intellij made
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Trie trie = (Trie) o;
-        return Objects.equals(root, trie.root);*/
 
-//        Node rootNode = o.root;
-//
-//        return DFS(this.root, o.root);
-        return true;
+        if(o == null) return false;
+        if(o == this) return true;
+        if(o.getClass() != this.getClass()) return false;
+
+        Trie t = (Trie) o;
+
+        if(t.wordCount != this.wordCount ||
+            t.nodeCount != this.nodeCount) return false;
+
+        return equalsHelper(this.getRoot(), t.getRoot());
     }
+    public boolean equalsHelper(Node thisTrie, Node toCompare) {
+        if(thisTrie.getValue() != toCompare.getValue()) return false;
 
-    public boolean DFS(Node thisTrie, Node toCompare) {
         Node[] thisTrieChildren = thisTrie.getChildren();
         Node[] toCompareChildren = toCompare.getChildren();
 
         for(int i = 0; i < 26; i++) { //26 because of the size of the array
-            if(thisTrieChildren[i] != null && toCompareChildren[i] != null) {
-                if(thisTrieChildren[i].getValue() != toCompareChildren[i].getValue()) {
-                    return false;
-                }
-                else { DFS(thisTrieChildren[i], toCompareChildren[i]); }
+            if (thisTrieChildren[i] != null && toCompareChildren[i] != null) {
+                if (!equalsHelper(thisTrieChildren[i], toCompareChildren[i])) return false;
+            } else if (thisTrieChildren[i] != null && toCompareChildren[i] == null) {
+                return false;
+            } else if (thisTrieChildren[i] == null && toCompareChildren[i] != null) {
+                return false;
             }
         }
         return true;
-    }
 
+    }
     @Override
     public int hashCode() {
-        return Objects.hash(root);
+        int index = 0;
+        for (int i = 0; i < 26; i++) {
+            if (root.getChildren()[i] != null) {
+                index = i;
+            }
+        }
+        return wordCount * nodeCount * index;
     }
-
     @Override
     public String toString() {
-        return "Trie{" +
-                "root=" + root +
-                '}';
+
+        StringBuilder output = new StringBuilder(); // this is just for collecting all output
+        StringBuilder currWord = new StringBuilder(); // to keep track of the path down to each node
+
+        toStringHelper(root, currWord, output);
+        return output.toString();
     }
+    public void toStringHelper(Node n, StringBuilder currWord, StringBuilder output) {
+
+        if(n.getValue() > 0) {
+            output.append(currWord).append("\n");
+        }
+
+        for(int i = 0; i < 26; i++) {
+            Node child = n.getChildren()[i];
+
+            if(child != null) {
+                char childChar = (char) (i + 'a');
+                currWord.append(childChar);
+                toStringHelper(child, currWord, output);
+                currWord.deleteCharAt(currWord.length() - 1);
+            }
+        }
+
+    }
+
 }
